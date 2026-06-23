@@ -6,11 +6,21 @@
  */ 
 
 #include <xc.h>
+#include <avr/interrupt.h>//creo q no es necesaria PROBAR DESPUES
+#include "timer.h"
+
+volatile uint8_t intervalo_T = 1;//por defecto lo pongo en 1 segundo
 
 int main(void)
 {
+	timer1_init();
+	sei();
     while(1)
     {
+		if(flag_timer1=1){
+			//bla bla bla	
+			flag_timer1=0;
+		}
         //TODO:: Please write your application code 
     }
 }
