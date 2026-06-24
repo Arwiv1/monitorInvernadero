@@ -9,10 +9,12 @@
 #include <avr/interrupt.h>//creo q no es necesaria PROBAR DESPUES
 #include "timer.h"
 
-volatile uint8_t intervalo_T = 1;//por defecto lo pongo en 1 segundo
+volatile uint8_t intervalo_T = 100;//por defecto lo pongo en 1 segundo
 
 int main(void)
 {
+	PCICR |= (1 << PCIE1);
+	PCMSK1 |= (1 << PCINT8);
 	timer1_init();
 	sei();
     while(1)
@@ -21,6 +23,6 @@ int main(void)
 			//bla bla bla	
 			flag_timer1=0;
 		}
-        //TODO:: Please write your application code 
+        //TODO:: Please write your application code
     }
 }

@@ -1,0 +1,5 @@
+// i2c_init: Configura fSCL a 100kHz usando TWBR y TWSR [5]
+// i2c_start: Genera condición de START y espera flag TWINT [6]
+// i2c_stop: Genera condición de STOP [6]
+// i2c_write(dato): Carga TWDR, activa transmisión y espera TWINT [6]
+// i2c_read(ack): Lee byte de TWDR y envía ACK o NACK según corresponda [6]
