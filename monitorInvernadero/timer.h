@@ -14,6 +14,9 @@
 extern volatile uint8_t flag_timer1;
 extern volatile uint8_t espera_30ms;
 extern volatile uint16_t intervalo_T;
+extern uint8_t hh;
+extern uint8_t mm;
+extern uint8_t ss;
 
 void timer1_init(void);
 

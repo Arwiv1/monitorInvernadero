@@ -1,5 +1,38 @@
-// i2c_init: Configura fSCL a 100kHz usando TWBR y TWSR [5]
-// i2c_start: Genera condición de START y espera flag TWINT [6]
-// i2c_stop: Genera condición de STOP [6]
-// i2c_write(dato): Carga TWDR, activa transmisión y espera TWINT [6]
-// i2c_read(ack): Lee byte de TWDR y envía ACK o NACK según corresponda [6]
+/*
+ * i2c.c
+ *
+ * Created: 24/6/2026 22:45:09
+ *  Author: labej
+ */ 
+#include "i2c.h"
+
+void i2c_init(void){
+	TWSR=0x00; //preescalar en 0
+	TWBR=152; //16Mhz
+	TWCR=0x04; //Activar TWI
+}
+
+void i2c_start(void){
+	TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
+	
+	while((TWCR & (1<< TWINT)) == 0);
+}
+
+unsigned char i2c_read(unsigned char isLast){
+	if(isLast == 0)
+		TWCR = (1<< TWINT)|(1<< TWEN)|(1<< TWEA);
+	else
+		TWCR =	(1 << TWINT)|(1<< TWEN);
+	while((TWCR & (1 << TWINT))==0);
+	return TWDR;
+}
+
+void i2c_write(unsigned char data){
+	TWDR = data;
+	TWCR = (1<< TWINT)|(1<< TWEN);
+	while((TWCR & (1<< TWINT))==0);
+}
+
+void i2c_stop(){
+	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
+}

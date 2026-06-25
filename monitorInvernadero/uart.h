@@ -10,7 +10,7 @@
 #define UART_H_
 #include <stdint.h>
 #define UART_BAUD_RATE 9600 // la pantalla se maneja a 9600 baudios
-#define BUFFER_SIZE 64 // tama?o maximo del string; SET TIME-14:30:00
+#define BUFFER_SIZE 128 // tama?o maximo del string; SET TIME-14:30:00
 
 extern volatile uint8_t string_recibido_flag;
 extern volatile uint8_t error_buffer_lleno;

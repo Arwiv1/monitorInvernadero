@@ -19,7 +19,7 @@ main.d main.o: .././main.c \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\sleep.h \
  .././timer.h .././dht11.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\string.h \
- .././uart.h \
+ .././uart.h .././ds3231.h .././i2c.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\stdio.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\util\delay.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\util\delay_basic.h \
@@ -68,6 +68,10 @@ c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\sleep.h:
 c:\program\ files\microchip\xc8\v3.10\avr\avr\include\string.h:
 
 .././uart.h:
+
+.././ds3231.h:
+
+.././i2c.h:
 
 c:\program\ files\microchip\xc8\v3.10\avr\avr\include\stdio.h:
 

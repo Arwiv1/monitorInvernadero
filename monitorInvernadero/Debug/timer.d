@@ -12,6 +12,7 @@ timer.d timer.o: .././timer.c .././timer.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\common.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\fuse.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\lock.h \
+ .././ds3231.h .././i2c.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\interrupt.h
 
 .././timer.h:
@@ -41,5 +42,9 @@ c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\common.h:
 c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\fuse.h:
 
 c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\lock.h:
+
+.././ds3231.h:
+
+.././i2c.h:
 
 c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\interrupt.h:

@@ -6,9 +6,10 @@
  */ 
 
 #include "timer.h"
+#include "ds3231.h"
 #include <avr/interrupt.h>
 
-static volatile uint8_t cont_ms = 0;
+static volatile uint16_t cont_ms = 0;
 
 void timer1_init(void) {
 	TCCR1A = 0;
@@ -26,6 +27,8 @@ ISR(TIMER1_COMPA_vect) {
 	cont_ms++;
 	espera_30ms++;
 	if (cont_ms >= intervalo_T) {
+		flag_timer1=1;
 		cont_ms = 0;
+		rtc_get_time(&hh,&mm,&ss);
 	}
 }
