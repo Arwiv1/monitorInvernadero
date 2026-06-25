@@ -16,14 +16,63 @@
         A esta altura el timer1 ya almaceno los bits que mando el sensor
         Hay que organizar la info, hacer el checksum y devoler humedad y temperatura
 */
+#include "dht11.h"
+
+
+
+uint16_t t_inicio_pulso;
+int8_t bit_actual= -1;
+uint8_t datos[5] = {0};
+uint16_t t_actual;
+uint16_t duracion;
+uint8_t checksum;
+uint8_t ignorar_flanco;
+
+
+void DHT11_iniciar(){
+	flag_error_sensor = 0;
+	espera_30ms = 0;
+	
+	//PIN C0 como salida, lo pongo en bajo
+	DDRC |= (1<<PORTC0);
+	PORTC &= ~(1<<PORTC0);
+	
+	//Mantengo en bajo por mas de 18ms
+	while (espera_30ms<3){
+		
+	}
+
+	//Pongo en alto y lo configuro como entrada, espero respuesta del sensor
+	PORTC |= (1<<PORTC0);
+	DDRC &= ~(1<<PORTC0);
+	bit_actual=-1;
+	ignorar_flanco=1;
+	PCMSK1 |=  (1 << PCINT8);
+}
+
+void DHT11_recibir(uint8_t *humedad, uint8_t *temperatura){
+	checksum = datos[0] + datos[1] + datos[2] + datos[3];
+	if (checksum == datos[4]){
+		*humedad = datos[0];
+		*temperatura = datos[2];
+	}
+	else flag_error_sensor = 1;
+	memset(datos, 0, sizeof(datos));
+}
+
 
 ISR(PCINT1_vect) {
-    uint16_t t_actual = TCNT1;
+    t_actual = TCNT1;
     
-    if (PINC & (1 << PC0)) { 
+    if (PINC & (1 << PINC0)) {
         t_inicio_pulso = t_actual;
     } else {
-        uint16_t duracion = t_actual - t_inicio_pulso;
+		if (ignorar_flanco) {
+			ignorar_flanco = 0;   // descartamos este, que lo generó el MCU
+			return;
+		}
+		if (t_actual < t_inicio_pulso) t_actual += 20000;
+        duracion = t_actual - t_inicio_pulso;
         
         if (bit_actual == -1) {
             // Este es el pulso en ALTO de la respuesta del sensor (80us)
@@ -34,8 +83,17 @@ ISR(PCINT1_vect) {
                 flag_error_sensor = 1; // El sensor no respondió correctamente
             }
         } else if (bit_actual < 40) {
-            tiempos_pulsos[bit_actual++] = duracion;
-            if (bit_actual == 40) flag_dht_listo = 1;
+			if (duracion > 120 && duracion < 160){
+				//Es un 1
+				datos[bit_actual/8] |= (1 << (7 - (bit_actual % 8)));
+			}
+			bit_actual++;
+            if (bit_actual == 40) {
+				PCMSK1 &=  ~(1 << PCINT8);
+				flag_dht_listo = 1;
+				bit_actual = -1;
+			}
         }
     }
 }
+
