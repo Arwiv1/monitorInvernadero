@@ -32,7 +32,7 @@ ISR(TIMER1_COMPA_vect){
 	cont_ms++;
 	
 	if(cont_ms >= intervalo_T){
-		flag=1; //flag para el background
+		flag_timer1=1; //flag para el background
 		cont_ms=0;
 	}
 }
