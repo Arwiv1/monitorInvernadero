@@ -21,7 +21,7 @@ uint8_t bcd_to_decimal(uint8_t bcd) {
 	return ((bcd >> 4) * 10) + (bcd & 0x0F);
 }
 
-void rtc_get_time(uint8_t *hora, uint8_t *minutos, uint8_t *segundos){
+void RTC_get_time(uint8_t *hora, uint8_t *minutos, uint8_t *segundos){
 	uint8_t seg_bcd, min_bcd, hora_bcd;
 	i2c_start();
 	i2c_write(RTC_ADDR << 1); // Modo escritura (0xD0)
@@ -40,7 +40,7 @@ void rtc_get_time(uint8_t *hora, uint8_t *minutos, uint8_t *segundos){
 	*hora = bcd_to_decimal(hora_bcd);
 }
 
-void rtc_set_time(uint8_t hora, uint8_t minutos, uint8_t segundos){
+void RTC_set_time(uint8_t hora, uint8_t minutos, uint8_t segundos){
 	i2c_start();
 	i2c_write(RTC_ADDR << 1);
 	i2c_write(0x00);

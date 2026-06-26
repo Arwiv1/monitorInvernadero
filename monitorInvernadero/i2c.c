@@ -6,7 +6,7 @@
  */ 
 #include "i2c.h"
 
-void i2c_init(void){
+void I2C_init(void){
 	TWSR=0x00; //preescalar en 0
 	TWBR=152; //16Mhz
 	TWCR=0x04; //Activar TWI

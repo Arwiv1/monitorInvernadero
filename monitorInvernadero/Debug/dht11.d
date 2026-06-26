@@ -13,7 +13,6 @@ dht11.d dht11.o: .././dht11.c .././dht11.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\fuse.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\lock.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\string.h \
- c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\sleep.h \
  c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\interrupt.h
 
 .././dht11.h:
@@ -45,7 +44,5 @@ c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\fuse.h:
 c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\lock.h:
 
 c:\program\ files\microchip\xc8\v3.10\avr\avr\include\string.h:
-
-c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\sleep.h:
 
 c:\program\ files\microchip\xc8\v3.10\avr\avr\include\avr\interrupt.h:

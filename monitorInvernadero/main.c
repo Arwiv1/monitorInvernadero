@@ -1,111 +1,107 @@
-/*
- * main.c
- *
- * Created: 6/23/2026 11:39:27 AM
- *  Author: labej
- */ 
-
-#include <xc.h>
-#include <avr/interrupt.h>//creo q no es necesaria PROBAR DESPUES
-#include <avr/sleep.h>
 #include "timer.h"
 #include "dht11.h"
 #include "uart.h"
 #include "ds3231.h"
 #include "i2c.h"
 #include <stdio.h>
-#define F_CPU 16000000UL
-#include <util/delay.h>
 
-volatile uint8_t flag_error_sensor = 0;
-volatile uint8_t flag_dht_listo = 0;
-volatile uint8_t flag_timer1 = 0;
-volatile uint8_t espera_30ms = 0;
-volatile uint8_t string_recibido_flag=0;
-volatile uint8_t error_buffer_lleno=0;
-volatile uint8_t error_tx_lleno=0;
-
+volatile uint8_t flag_dht11_error = 0;
+volatile uint8_t flag_dht11_esperando=0;
+volatile uint8_t flag_dht11_listo = 0;
+volatile uint8_t flag_timer1_periodo = 0;
+volatile uint8_t flag_uart_comando = 0;
+volatile uint8_t flag_uart_rxlleno = 0;
+volatile uint8_t flag_uart_txlleno = 0;
 char buffer_tx[BUFFER_SIZE];
 char buffer_rx[BUFFER_SIZE];
-uint8_t humedad;
-uint8_t temperatura;
 uint8_t hh;
 uint8_t mm;
 uint8_t ss;
-uint8_t hhin;
-uint8_t mmin;
-uint8_t ssin;
-uint8_t enviar_alerta = 0;
-uint8_t cant_alertas = 0;
-char estado[10];
-char comando[80];
-char mensaje[120];
-volatile uint16_t intervalo_T = 200; //100 por cada segundo de interrupcion
 uint8_t seg = 2;
-int libre =1;
 
-uint8_t validar_set_time(const char *str, uint8_t *h, uint8_t *m, uint8_t *s) {
-	int h_, m_, s_;
+uint8_t validar_set_time(const char *str, uint8_t *hhin, uint8_t *mmin, uint8_t *ssin) {
+	int h, m, s;
 	
-	if (sscanf(str, "SET_TIME=%d:%d:%d", &h_, &m_, &s_) != 3)
-	return 0;  // no matchea el formato
-	
-	// validar rangos
-	if (h_ > 23 || m_ > 59 || s_ > 59)
+	//Valido formato y valores del comando
+	if (sscanf(str, "SET_TIME=%d:%d:%d", &h, &m, &s) != 3)
 	return 0;
 	
-	*h = h_;
-	*m = m_;
-	*s = s_;
+	if (h > 23 || m > 59 || s > 59)
+	return 0;
+	
+	*hhin = h;
+	*mmin = m;
+	*ssin = s;
 	return 1;
 }
 
-uint8_t validar_set_tm(const char *str, uint8_t *seg) {
-	int s_;
+uint8_t validar_set_tm(const char *str) {
+	int s;
 
-	if (sscanf(str, "SET_TM=%d", &s_) != 1) return 0;
+	//Valido formato y valores del comando
+	if (sscanf(str, "SET_TM=%d", &s) != 1) return 0;
 
-	if (s_ < 2 || s_ > 60) return 0;
+	if (s < 2 || s > 60) return 0;
 
-	*seg = s_;
+	seg = s;
 	return 1;
 }
 
-uint8_t evaluar_condiciones(uint8_t h, uint8_t m, uint8_t s, uint8_t temp, uint8_t hum) {
-	if ((h>6) && (h<19)){
-		if ((temp<20) | (temp>30) | (hum<50) | (hum>70)) return 0;
+uint8_t evaluar_condiciones(uint8_t temperatura, uint8_t humedad) {
+	if ((hh>6) && (hh<19)){
+		//Evalúo valores optimos de día
+		if ((temperatura<20) | (temperatura>30) | (humedad<50) | (humedad>70)) return 0;
 		else return 1;
 	}
 	else {
-		if ((temp<15) | (temp>22) | (hum<60) | (hum>80)) return 0;
+		//Evalúo valores optimos de noche
+		if ((temperatura<15) | (temperatura>22) | (humedad<60) | (humedad>80)) return 0;
 		else return 1;
 	}
 }
 
+void MAIN_init(){
+	DHT11_init();
+	TIMER1_init();
+	UART0_init();
+	I2C_init();
+	sei();
+	UART0_sendString("ARRANCA EL TEST\r\n");
+} 
+
 int main(void)
 {
-	PCICR |= (1 << PCIE1);
-	PCMSK1 &=  ~(1 << PCINT8);
-	timer1_init();
-	set_sleep_mode(SLEEP_MODE_IDLE);
-	sleep_enable();
-	uart0_init();
-	i2c_init();
-	sei();
-	uart0_sendString("ARRANCA EL TEST\r\n");
+	uint8_t humedad;
+	uint8_t temperatura;
+	uint8_t hhin;
+	uint8_t mmin;
+	uint8_t ssin;
+	uint8_t cant_alertas = 0;
+	char estado[10];
+	char comando[80];
+	char mensaje[120];
+	
+	MAIN_init();
+	
     while(1)
     {
-		if(flag_timer1){	
-			flag_timer1=0;
+		//Espero que el timer me avise que es momento de reportar, y me aseguro no estar espernando respuestas del sensor;
+		if(flag_timer1_periodo && !(flag_dht11_esperando)){	
+			flag_timer1_periodo=0;
 			DHT11_iniciar();
 		}
 		
-		if (flag_dht_listo){
-			flag_dht_listo=0;
+		//El sensor respondió correctamente
+		if (flag_dht11_listo){
+			flag_dht11_listo=0;
+			
+			//Verifico integridad de los datos de respuesta
 			DHT11_recibir(&humedad,&temperatura);
 			
-			if (!flag_error_sensor){
-				if(evaluar_condiciones(hh,mm,ss,temperatura,humedad)) {
+			//Si no hubo problemas de integridad
+			if (!flag_dht11_error){
+				//Segun la hora del día calculo estado NORMAL o de ALERTA
+				if(evaluar_condiciones(temperatura, humedad)) {
 					strcpy(estado, "NORMAL");
 					cant_alertas=0;
 				}
@@ -115,6 +111,7 @@ int main(void)
 					else cant_alertas--;
 					
 				}
+				//En caso de estado ALERTA, cada dos mensajes mando un mensaje de ALERTA especial
 				if(cant_alertas!=2){
 					sprintf(
 					mensaje,
@@ -126,8 +123,6 @@ int main(void)
 					);
 				}
 				else{
-					enviar_alerta = 0;
-					
 					sprintf(
 					mensaje,
 					"[ALERTA] [%02u:%02u:%02u] Parametros fuera de rango optimo! T: %u C | H: %u%%\r\n",
@@ -137,38 +132,51 @@ int main(void)
 					);
 					
 				}
-				while(error_tx_lleno);
-				uart0_sendString(mensaje);
-				
+				while(flag_uart_txlleno);
+				UART0_sendString(mensaje);	
 			}
-			else {
-				flag_error_sensor=0;
-				while(error_tx_lleno);
-				uart0_sendString("ERROR SENSOR\r\n");
-			}
-			
 		}
 		
-		if (flag_error_sensor){
-			flag_error_sensor=0;
-			while(error_tx_lleno);
-			uart0_sendString("ERROR SENSOR\r\n");
+		//El sensor falló, no respodió o no lo hizo correctamente
+		if (flag_dht11_error){
+			flag_dht11_error=0;
+			flag_dht11_esperando=0;
+			while(flag_uart_txlleno);
+			UART0_sendString("ERROR SENSOR\r\n");
 		}
 		
-		if (string_recibido_flag){
-			string_recibido_flag=0;
+		//Por la terminal llegan comandos
+		if (flag_uart_comando){
+			flag_uart_comando=0;
 			strcpy(comando, buffer_rx);
-			while(error_tx_lleno);
-			uart0_sendString(strcat(comando, "\r\n"));
-			if (validar_set_time(comando,&hhin,&mmin,&ssin)){
-				rtc_set_time(hhin,mmin,ssin);
+			while(flag_uart_txlleno);
+			UART0_sendString(strcat(comando, "\r\n"));
+			//Chequeo formato del comando
+			if (validar_set_time(comando, &hhin, &mmin, &ssin)){
+				//Es SET_TIME=HH:MM:SS
+				sprintf(
+				mensaje,
+				"HORA CAMBIADA: [%02u:%02u:%02u]\r\n",
+				hhin, mmin, ssin
+				);
+				while(flag_uart_txlleno);
+				UART0_sendString(mensaje);
+				RTC_set_time(hhin,mmin,ssin);
 			}
-			else if (validar_set_tm(comando,&seg)){
-				intervalo_T = 100*seg;
+			else if (validar_set_tm(comando)){
+				//Es SET_TM=SS
+				TIMER1_set_T(seg);
+				sprintf(
+				mensaje,
+				"PERIODO CAMBIADO: T = %02u\r\n",
+				seg
+				);
+				while(flag_uart_txlleno);
+				UART0_sendString(mensaje);
 			}
 			else {
-				while(error_tx_lleno);
-				uart0_sendString("COMANDO INVALIDO\r\n");
+				while(flag_uart_txlleno);
+				UART0_sendString("COMANDO INVALIDO\r\n");
 			}
 		}
 			

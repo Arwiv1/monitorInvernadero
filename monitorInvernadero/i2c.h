@@ -11,7 +11,7 @@
 
 #include <avr/io.h>
 
-void i2c_init(void);
+void I2C_init(void);
 void i2c_start(void);
 unsigned char i2c_read(unsigned char isLast);
 void i2c_write(unsigned char data);

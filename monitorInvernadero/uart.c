@@ -22,7 +22,7 @@
 
 
 
-void uart0_init(void){
+void UART0_init(void){
 	//función de inicialización de uart
 	
 	UCSR0C = (1<<UCSZ01)|(1<<UCSZ00);	 //configura formato 8N1
@@ -30,10 +30,10 @@ void uart0_init(void){
 	UCSR0B = (1 << TXEN0) | (1 << RXEN0) | (1 << RXCIE0);	// Activa el Transmisor del Puerto Serie
 }
 
-void uart0_sendString(const char* str){
-	error_tx_lleno=1;
+void UART0_sendString(const char* str){
+	flag_uart_txlleno=1;
 	if (UCSR0B & (1 << UDRIE0)) {
-		return 2; // No se pudo mandar porque el buffer TX estaba lleno
+		return; // No se pudo mandar porque el buffer TX estaba lleno LE SAQUE EL 2!!!!!!
 	}
 	//función para guardar en un buffer el string y enviarlo de a poco
 	strncpy(buffer_tx, str, BUFFER_SIZE - 1);
@@ -48,8 +48,8 @@ volatile uint8_t rx_index=0;
 
 ISR(USART_RX_vect){
 	char datoRecibido= UDR0;
-	if (string_recibido_flag == 1) {
-		error_buffer_lleno = 1; // avisamos de buffer lleno, aun esta enviando
+	if (flag_uart_comando == 1) {
+		flag_uart_rxlleno = 1; // avisamos de buffer lleno, aun esta enviando
 		return;
 	}
 	
@@ -61,7 +61,7 @@ ISR(USART_RX_vect){
 	}else{
 		if (rx_index > 0) {
 			buffer_rx[rx_index] = '\0';
-			string_recibido_flag = 1;
+			flag_uart_comando = 1;
 			rx_index = 0;
 		}
 	}
@@ -77,6 +77,6 @@ ISR(USART_UDRE_vect){
 	}else{
 		tx_index=0;
 		UCSR0B &= ~(1 << UDRIE0); // cuando termina de transmitir, enmascara la interrupción y así evita el bucle infinito
-		error_tx_lleno=0;
+		flag_uart_txlleno=0;
 	}
 }
